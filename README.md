@@ -1,110 +1,89 @@
-# pxcli
+# pxcli-mcp
 
-pxcli is a cli tool meant for AI agents (claude code, opencode, codex) to draw pixel art.
+An MCP (Model Context Protocol) server that lets AI coding agents (Claude Code, Cursor, Windsurf, etc.) create pixel art programmatically. No daemon, no sockets, no Go runtime — just a lightweight TypeScript server that runs via `npx`.
 
-It was created using a ralph loop see `ralph.sh` and an example agent is given in `.opencode/agents/artists.md`
+## Install
 
-## Install (Homebrew)
+### Use with Claude Code
 
-macOS and Linux (Linuxbrew):
+Add to your project's `.claude/settings.json`:
 
-```bash
-brew install vossenwout/pixel-art-cli/pxcli
+```json
+{
+  "mcpServers": {
+    "pixel-art": {
+      "command": "npx",
+      "args": ["pxcli-mcp", "--export-dir", "./assets/sprites"]
+    }
+  }
+}
 ```
 
-Upgrade:
+### Use with any MCP client
 
 ```bash
-brew upgrade pxcli
+npx pxcli-mcp --export-dir ./output
 ```
 
-## Build from source
-
-Windowed (GUI):
-(don't have windows PC so didn't tests this if you have fixes you can always make PR)
+### From source
 
 ```bash
-go build -tags=ebiten ./cmd/pxcli
-```
-
-Headless (no GUI deps):
-
-```bash
-go build ./cmd/pxcli
+cd mcp-server
+npm install
+npm run build
+node dist/index.js --export-dir ./output
 ```
 
 ## Quick start
 
-```bash
-pxcli start
-pxcli set_pixel 1 1 #ff0000
-pxcli export out.png
-pxcli stop
+Once configured, Claude (or any MCP client) can use these tools directly:
+
+```
+create_canvas(name: "hero", width: 16, height: 16)
+fill_rect(canvas: "hero", x: 0, y: 0, width: 16, height: 16, color: "black")
+set_pixel(canvas: "hero", x: 8, y: 4, color: "#ff0000")
+draw_line(canvas: "hero", x1: 0, y1: 15, x2: 15, y2: 15, color: "white")
+export_png(canvas: "hero", filename: "hero.png")
 ```
 
-## CLI API
+## Tools
 
-Lifecycle:
+| Tool | Description |
+|------|-------------|
+| `create_canvas` | Create a named canvas with given dimensions (max 256x256) |
+| `list_canvases` | List all active canvases and their sizes |
+| `set_pixel` | Set a single pixel color |
+| `get_pixel` | Read a pixel's color |
+| `fill_rect` | Fill a rectangle with a solid color |
+| `draw_line` | Draw a line between two points (Bresenham's algorithm) |
+| `clear` | Clear entire canvas to a color (default: transparent) |
+| `export_png` | Export canvas to a PNG file |
+| `undo` | Undo the last drawing operation |
+| `redo` | Redo the last undone operation |
 
-- `pxcli start [--size 32x32] [--scale 10] [--headless] [--socket <path>]`
-- `pxcli stop [--socket <path>]`
-
-Drawing:
-
-- `pxcli set_pixel <x> <y> <color>`
-- `pxcli fill_rect <x> <y> <w> <h> <color>`
-- `pxcli line <x1> <y1> <x2> <y2> <color>`
-- `pxcli clear [color]`
-
-Utility:
-
-- `pxcli get_pixel <x> <y>`
-- `pxcli export <filename.png>`
-- `pxcli undo`
-- `pxcli redo`
-
-Common error codes:
-
-- `invalid_command` unknown command
-- `invalid_args` wrong argument count or type
-- `invalid_color` unsupported color format
-- `out_of_bounds` coordinate outside canvas
-- `no_history` undo/redo with empty history
-- `io` export file error
+All drawing tools accept a `canvas` parameter (defaults to `"default"`), so you can work on multiple sprites simultaneously.
 
 ## Color formats
 
-Accepted input formats:
-
 - Hex: `#rgb`, `#rrggbb`, `#rrggbbaa`
-- Named: `black`, `white`, `red`, `green`, `blue`, `yellow`, `orange`, `purple`, `cyan`, `magenta`, `gray`, `grey`, `transparent`
+- Named: `red`, `green`, `blue`, `white`, `black`, `transparent`, `yellow`, `cyan`, `magenta`, `orange`, `purple`, `gray`, `grey`, `pink`, `brown`, `lime`, `navy`, `teal`, `maroon`, `olive`
 
-!!! For zsh shells you have to put colors between "" parenthesis. !!!
+## CLI options
 
-## Headless vs windowed
-
-- Windowed mode is the default when built with `-tags=ebiten`.
-- Headless mode is opt-in; pass `--headless` for CI or a headless container.
-- If the binary is built without the `ebiten` tag, starting without `--headless` returns `err renderer_unavailable ...`.
-- The headless container/CI environment cannot open a window; build and run windowed mode locally.
-
-## Linux GUI requirements
-
-For the GUI on Linux, you need X11/OpenGL runtime libraries. Examples:
-
-- Debian/Ubuntu: `sudo apt-get install -y libx11-6 libxext6 libxrandr2 libxinerama1 libxcursor1 libxi6 libgl1`
-- Fedora: `sudo dnf install libX11 libXext libXrandr libXinerama libXcursor libXi mesa-libGL`
-
-If you are in a headless container, use `--headless`.
+| Flag | Description |
+|------|-------------|
+| `--export-dir <path>` | Directory for exported PNGs (defaults to CWD) |
 
 ## Development
 
-Typical commands:
-
 ```bash
-go test ./...
-go build ./cmd/pxcli
-go build -tags=ebiten ./cmd/pxcli
+cd mcp-server
+npm install
+npm run build
+npm test        # runs 22 tests (unit + MCP integration)
+npm run dev     # watch mode for TypeScript compilation
 ```
 
-If you are developing in a headless container, use `--headless` when running the daemon.
+## Credits
+
+Inspired by [vossenwout/pixel-art-cli](https://github.com/vossenwout/pixel-art-cli) — the original Go daemon-based implementation is preserved in `old-implementation/`.

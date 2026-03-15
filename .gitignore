@@ -1,1 +1,4 @@
-./pxlcli
+node_modules/
+dist/
+old-implementation/
+mcp-server/
