@@ -86,4 +86,4 @@ npm run dev     # watch mode for TypeScript compilation
 
 ## Credits
 
-Inspired by [vossenwout/pixel-art-cli](https://github.com/vossenwout/pixel-art-cli) — the original Go daemon-based implementation is preserved in `old-implementation/`.
+Inspired by and built on top of [vossenwout/pixel-art-cli](https://github.com/vossenwout/pixel-art-cli) — thank you for the original Go daemon-based pixel art CLI that made this possible.

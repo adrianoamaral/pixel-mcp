@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>pxcli-mcp playground</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0f0f1a;
+    --surface: #1a1a2e;
+    --surface2: #16213e;
+    --border: #2a2a4a;
+    --text: #c8c8d8;
+    --text-dim: #666680;
+    --accent: #e2b714;
+    --accent-dim: #8a7020;
+    --green: #4ec9b0;
+    --red: #f44747;
+    --blue: #569cd6;
+    --orange: #ce9178;
+    --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* ── Header ─────────────────────────────────── */
+  header {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  header .tag {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  #header-status {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--green);
+  }
+
+  /* ── Preview panel (left) ──────────────────── */
+  .preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+  .canvas-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    box-shadow: 0 0 40px rgba(226, 183, 20, 0.05);
+  }
+  canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+  }
+  .canvas-info {
+    position: absolute;
+    bottom: -24px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  #coords {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 10px;
+    color: var(--text-dim);
+    background: rgba(15,15,26,0.8);
+    padding: 2px 6px;
+    border-radius: 2px;
+    pointer-events: none;
+    display: none;
+  }
+
+  /* ── Sidebar (right) ───────────────────────── */
+  .sidebar {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Section styling */
+  .section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  /* ── Prompt input ──────────────────────────── */
+  .prompt-area {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 60px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .prompt-area:focus { border-color: var(--accent); }
+  .prompt-area::placeholder { color: var(--text-dim); }
+
+  /* ── Parameters grid ───────────────────────── */
+  .params-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .param {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .param.full { grid-column: 1 / -1; }
+  .param label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .param input, .param select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 8px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .param input:focus, .param select:focus { border-color: var(--accent); }
+
+  /* ── Buttons ───────────────────────────────── */
+  .btn-row {
+    display: flex;
+    gap: 6px;
+  }
+  .btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn:hover { background: var(--border); }
+  .btn.primary {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn.primary:hover { background: var(--accent); color: #000; }
+  .btn.danger { border-color: var(--red); color: var(--red); }
+  .btn.danger:hover { background: var(--red); color: #fff; }
+
+  /* ── Log ────────────────────────────────────── */
+  .log-wrap {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .log-header {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .log-header .section-title { margin-bottom: 0; }
+  #log-count {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--bg);
+    padding: 1px 6px;
+    border-radius: 8px;
+  }
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    font-size: 11px;
+    line-height: 1.6;
+    min-height: 0;
+  }
+  #log::-webkit-scrollbar { width: 6px; }
+  #log::-webkit-scrollbar-track { background: transparent; }
+  #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .log-entry {
+    padding: 1px 16px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .log-entry:hover { background: rgba(255,255,255,0.02); }
+  .log-time { color: var(--text-dim); font-size: 10px; flex-shrink: 0; }
+  .log-op { color: var(--blue); flex-shrink: 0; min-width: 64px; }
+  .log-detail { color: var(--text-dim); }
+  .log-entry.error .log-op { color: var(--red); }
+  .log-entry.info .log-op { color: var(--green); }
+  .log-entry.status .log-op { color: var(--accent); }
+
+  .log-stats {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 16px;
+  }
+  .log-stats span { color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────── -->
+<header>
+  <h1>pxcli-mcp</h1>
+  <div class="tag">playground</div>
+  <div id="header-status">ready</div>
+</header>
+
+<!-- ── Preview ─────────────────────────────────── -->
+<div class="preview">
+  <div class="canvas-wrap">
+    <canvas id="c"></canvas>
+    <div id="coords"></div>
+    <div class="canvas-info" id="canvas-info">64 x 48 &middot; scale 10x</div>
+  </div>
+</div>
+
+<!-- ── Sidebar ─────────────────────────────────── -->
+<div class="sidebar">
+
+  <!-- Prompt -->
+  <div class="section">
+    <div class="section-title">Prompt</div>
+    <textarea class="prompt-area" id="prompt" placeholder="Describe what to draw...&#10;e.g. &quot;A retro spaceship on a starfield&quot;"></textarea>
+  </div>
+
+  <!-- Parameters -->
+  <div class="section">
+    <div class="section-title">Canvas Settings</div>
+    <div class="params-grid">
+      <div class="param">
+        <label>Canvas Name</label>
+        <input type="text" id="p-name" value="default" />
+      </div>
+      <div class="param">
+        <label>Scale</label>
+        <select id="p-scale">
+          <option value="6">6x</option>
+          <option value="8">8x</option>
+          <option value="10" selected>10x</option>
+          <option value="12">12x</option>
+          <option value="14">14x</option>
+        </select>
+      </div>
+      <div class="param">
+        <label>Width (px)</label>
+        <input type="number" id="p-width" value="64" min="1" max="256" />
+      </div>
+      <div class="param">
+        <label>Height (px)</label>
+        <input type="number" id="p-height" value="48" min="1" max="256" />
+      </div>
+      <div class="param">
+        <label>Background</label>
+        <input type="text" id="p-bg" value="#000000" />
+      </div>
+      <div class="param">
+        <label>Export Dir</label>
+        <input type="text" id="p-export" value="./output" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="section">
+    <div class="btn-row">
+      <button class="btn primary" id="btn-apply">Apply &amp; Clear</button>
+      <button class="btn" id="btn-export">Export PNG</button>
+      <button class="btn danger" id="btn-undo">Undo</button>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="log-wrap">
+    <div class="log-header">
+      <div class="section-title">Log</div>
+      <div id="log-count">0</div>
+    </div>
+    <div id="log"></div>
+    <div class="log-stats">
+      Pixels drawn: <span id="stat-pixels">0</span>
+      &middot;
+      Operations: <span id="stat-ops">0</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────
+let W = 64, H = 48, SCALE = 10;
+let totalPixels = 0, totalOps = 0;
+const canvasEl = document.getElementById('c');
+const ctx = canvasEl.getContext('2d');
+
+function initCanvas() {
+  W = parseInt(document.getElementById('p-width').value) || 64;
+  H = parseInt(document.getElementById('p-height').value) || 48;
+  SCALE = parseInt(document.getElementById('p-scale').value) || 10;
+  canvasEl.width = W * SCALE;
+  canvasEl.height = H * SCALE;
+  const bg = document.getElementById('p-bg').value || '#000000';
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+  document.getElementById('canvas-info').textContent = `${W} × ${H} · scale ${SCALE}x`;
+  totalPixels = 0;
+  totalOps = 0;
+  updateStats();
+  log('info', 'canvas', `Created ${W}×${H} canvas (bg: ${bg})`);
+}
+
+// ── Drawing API (called by MCP / browser automation) ──
+window.px = function(x, y, r, g, b, a) {
+  ctx.fillStyle = `rgba(${r},${g},${b},${a/255})`;
+  ctx.fillRect(x * SCALE, y * SCALE, SCALE, SCALE);
+  totalPixels++;
+  totalOps++;
+  updateStats();
+};
+
+window.rect = function(x, y, w, h, r, g, b, a) {
+  ctx.fillStyle = `rgba(${r},${g},${b},${a/255})`;
+  ctx.fillRect(x * SCALE, y * SCALE, w * SCALE, h * SCALE);
+  totalPixels += w * h;
+  totalOps++;
+  log('op', 'fill_rect', `(${x},${y}) ${w}×${h} rgba(${r},${g},${b},${a})`);
+  updateStats();
+};
+
+window.line = function(x1, y1, x2, y2, r, g, b, a) {
+  ctx.fillStyle = `rgba(${r},${g},${b},${a/255})`;
+  let dx = Math.abs(x2 - x1), dy = -Math.abs(y2 - y1);
+  let sx = x1 < x2 ? 1 : -1, sy = y1 < y2 ? 1 : -1;
+  let err = dx + dy, cx = x1, cy = y1;
+  let count = 0;
+  while (true) {
+    ctx.fillRect(cx * SCALE, cy * SCALE, SCALE, SCALE);
+    count++;
+    if (cx === x2 && cy === y2) break;
+    let e2 = 2 * err;
+    if (e2 >= dy) { err += dy; cx += sx; }
+    if (e2 <= dx) { err += dx; cy += sy; }
+  }
+  totalPixels += count;
+  totalOps++;
+  log('op', 'line', `(${x1},${y1})→(${x2},${y2}) ${count}px rgba(${r},${g},${b},${a})`);
+  updateStats();
+};
+
+// Batch set_pixel logging (logs every N pixels to avoid flooding)
+let pxBatch = 0;
+let pxBatchTimer = null;
+const origPx = window.px;
+window.px = function(x, y, r, g, b, a) {
+  origPx(x, y, r, g, b, a);
+  pxBatch++;
+  if (!pxBatchTimer) {
+    pxBatchTimer = setTimeout(() => {
+      if (pxBatch > 0) {
+        log('op', 'set_pixel', `${pxBatch} pixel${pxBatch > 1 ? 's' : ''} drawn`);
+        pxBatch = 0;
+      }
+      pxBatchTimer = null;
+    }, 200);
+  }
+};
+
+// Status update from drawing scripts
+window.setStatus = function(msg) {
+  document.getElementById('header-status').textContent = msg;
+  log('status', 'status', msg);
+};
+
+// ── Log ────────────────────────────────────────
+function log(type, op, detail) {
+  const logEl = document.getElementById('log');
+  const now = new Date();
+  const time = now.toLocaleTimeString('en', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<span class="log-time">${time}</span><span class="log-op">${op}</span><span class="log-detail">${detail}</span>`;
+  logEl.appendChild(entry);
+  logEl.scrollTop = logEl.scrollHeight;
+
+  const count = logEl.children.length;
+  document.getElementById('log-count').textContent = count;
+}
+
+function updateStats() {
+  document.getElementById('stat-pixels').textContent = totalPixels.toLocaleString();
+  document.getElementById('stat-ops').textContent = totalOps.toLocaleString();
+}
+
+// ── Coordinate tracker ─────────────────────────
+canvasEl.addEventListener('mousemove', (e) => {
+  const rect = canvasEl.getBoundingClientRect();
+  const x = Math.floor((e.clientX - rect.left) / SCALE);
+  const y = Math.floor((e.clientY - rect.top) / SCALE);
+  const coordsEl = document.getElementById('coords');
+  if (x >= 0 && x < W && y >= 0 && y < H) {
+    coordsEl.textContent = `${x}, ${y}`;
+    coordsEl.style.display = 'block';
+  } else {
+    coordsEl.style.display = 'none';
+  }
+});
+canvasEl.addEventListener('mouseleave', () => {
+  document.getElementById('coords').style.display = 'none';
+});
+
+// ── Button handlers ────────────────────────────
+document.getElementById('btn-apply').addEventListener('click', () => {
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('log-count').textContent = '0';
+  initCanvas();
+});
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const name = document.getElementById('p-name').value || 'default';
+  const link = document.createElement('a');
+  link.download = `${name}.png`;
+  link.href = canvasEl.toDataURL('image/png');
+  link.click();
+  log('info', 'export', `Downloaded ${name}.png`);
+});
+
+document.getElementById('btn-undo').addEventListener('click', () => {
+  log('info', 'undo', 'Undo requested (use MCP undo tool)');
+});
+
+// ── Init ───────────────────────────────────────
+initCanvas();
+</script>
+</body>
+</html>
