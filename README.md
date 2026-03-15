@@ -73,6 +73,38 @@ All drawing tools accept a `canvas` parameter (defaults to `"default"`), so you 
 |------|-------------|
 | `--export-dir <path>` | Directory for exported PNGs (defaults to CWD) |
 
+## Playground (live preview)
+
+The repo includes `viewer.html` — a browser-based playground for watching pixel art being drawn in real time.
+
+1. Serve the file locally:
+   ```bash
+   npx serve .
+   ```
+2. Open `http://localhost:3000/viewer.html` in your browser
+
+The playground has two columns:
+- **Left**: Scaled pixel canvas with coordinate tracker on hover
+- **Right**: Prompt field, canvas settings (name, dimensions, scale, background, export dir), action buttons, and a live operation log
+
+The canvas exposes global drawing functions (`px`, `rect`, `line`) that can be called from the browser console or via browser automation tools (e.g. Claude in Chrome). This makes it easy to visually verify pixel art as it's being drawn step by step.
+
+### Drawing from the browser console
+
+```js
+// Set a red pixel at (10, 5)
+px(10, 5, 255, 0, 0, 255)
+
+// Fill a blue rectangle
+rect(0, 0, 16, 16, 0, 0, 255, 255)
+
+// Draw a green line
+line(0, 0, 15, 15, 0, 255, 0, 255)
+
+// Update status message
+setStatus('Drawing complete!')
+```
+
 ## Development
 
 ```bash
