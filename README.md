@@ -1,4 +1,4 @@
-# pxcli-mcp
+# pixel-mcp
 
 An MCP (Model Context Protocol) server that lets AI coding agents (Claude Code, Cursor, Windsurf, etc.) create pixel art programmatically. No daemon, no sockets, no Go runtime — just a lightweight TypeScript server that runs via `npx`.
 
@@ -28,7 +28,6 @@ npx pxcli-mcp --export-dir ./output
 ### From source
 
 ```bash
-cd mcp-server
 npm install
 npm run build
 node dist/index.js --export-dir ./output
@@ -77,7 +76,6 @@ All drawing tools accept a `canvas` parameter (defaults to `"default"`), so you 
 ## Development
 
 ```bash
-cd mcp-server
 npm install
 npm run build
 npm test        # runs 22 tests (unit + MCP integration)
