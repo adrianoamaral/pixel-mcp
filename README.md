@@ -6,18 +6,13 @@ An MCP (Model Context Protocol) server that lets AI coding agents (Claude Code, 
 
 ### Use with Claude Code
 
-Add to your project's `.claude/settings.json`:
+Run this from your project directory:
 
-```json
-{
-  "mcpServers": {
-    "pixel-art": {
-      "command": "npx",
-      "args": ["pxcli-mcp", "--export-dir", "./assets/sprites"]
-    }
-  }
-}
+```bash
+claude mcp add pixel-art npx -- pxcli-mcp --export-dir ./assets/sprites
 ```
+
+This registers the server in Claude Code's config scoped to your project. Verify it's connected with `/mcp`.
 
 ### Use with any MCP client
 
