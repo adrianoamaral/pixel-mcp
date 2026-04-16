@@ -4,10 +4,10 @@
   "description": "MCP server for AI-driven pixel art creation",
   "type": "module",
   "bin": {
-    "pxcli-mcp": "./dist/index.js"
+    "pxcli-mcp": "dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
     "test": "node --test dist/**/*.test.js",
